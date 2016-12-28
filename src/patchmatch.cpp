@@ -35,22 +35,29 @@ void PatchMatch::init() {
 }
 
 void PatchMatch::patchmatch() {
+    cv::namedWindow("result");
     int itr = 0;
-    while( itr++ < MAX_ITR && !unchanged) {
+    while( itr ++ < MAX_ITR){
+    //while( itr++ < MAX_ITR && !unchanged) {
         unchanged = true;
+        time_t a= clock();
         neighborPropgation();
         randomPropgation();
-        if (itr % 10 == 0) {
+        time_t b = clock();
+        if (itr % 2 == 0) {
             generatePatched();
-
-            cv::imshow("a",patched_im);
+            std::cout<<1.0*(b-a)/CLOCKS_PER_SEC<<"s"<<std::endl;
+            cv::imshow("result",patched_im);
             cv::waitKey(0);
-            cv::destroyAllWindows();
+
         }
     }
-
+    cv::destroyAllWindows();
 }
 void PatchMatch::neighborPropgation() {
+    cv::Mat p;
+    cv::Mat q;
+    double new_d;
     for(int i = 0; i < rows - PATCH_SIZE; i += STRIDE){
         for (int j = 0; j < cols - PATCH_SIZE; j += STRIDE) {
             std::vector<cv::Vec2d> new_poses = std::vector<cv::Vec2d>{
@@ -59,14 +66,14 @@ void PatchMatch::neighborPropgation() {
                     coord.at<cv::Vec2d>(i, j + STRIDE) - cv::Vec2d(0,STRIDE),
                     coord.at<cv::Vec2d>(i, j - STRIDE) + cv::Vec2d(0,STRIDE),
             };
-            cv::Mat p = dst_im.rowRange(i,i+PATCH_SIZE).colRange(j,j+PATCH_SIZE);
+            p = dst_im.rowRange(i,i+PATCH_SIZE).colRange(j,j+PATCH_SIZE);
 
-            for(auto pos: new_poses) {
+            for(auto &pos: new_poses) {
                 //这里需要判断一下位置是不是合理
                 if(pos[0]<0 || pos[0] > src_im.rows - PATCH_SIZE || pos[1]<0 || pos[1] > src_im.cols - PATCH_SIZE) continue;
 
-                cv::Mat q = src_im.rowRange(pos[0],pos[0]+PATCH_SIZE).colRange(pos[1],pos[1]+PATCH_SIZE);
-                double new_d = patchDistance(p,q);
+                q = src_im.rowRange(pos[0],pos[0]+PATCH_SIZE).colRange(pos[1],pos[1]+PATCH_SIZE);
+                new_d = patchDistance(p,q);
                 if (diff.at<double>(i, j) > new_d){
                     diff.at<double>(i, j) = new_d;
                     coord.at<cv::Vec2d>(i,j) = pos;
@@ -78,24 +85,28 @@ void PatchMatch::neighborPropgation() {
     }
 }
 void PatchMatch::randomPropgation() {
+    cv::Mat p;
+    cv::Mat q;
+    double new_d;
     for(int i = 0; i < rows - PATCH_SIZE; i += STRIDE){
         for (int j = 0; j < cols - PATCH_SIZE; j += STRIDE) {
             std::vector<cv::Vec2d> new_poses = std::vector<cv::Vec2d>{
-                    coord.at<cv::Vec2d>(i, j) + cv::Vec2d(rand() % 2,rand() % 2)- cv::Vec2d(1,1),
+                    //coord.at<cv::Vec2d>(i, j) + cv::Vec2d(rand() % 2,rand() % 2)- cv::Vec2d(1,1),
                     coord.at<cv::Vec2d>(i, j) + cv::Vec2d(rand() % 4,rand() % 4)- cv::Vec2d(2,2),
                     coord.at<cv::Vec2d>(i, j) + cv::Vec2d(rand() % 8,rand() % 8)- cv::Vec2d(4,4),
                     coord.at<cv::Vec2d>(i, j) + cv::Vec2d(rand() % 16,rand() % 16)- cv::Vec2d(8,8),
                     coord.at<cv::Vec2d>(i, j) + cv::Vec2d(rand() % 32,rand() % 32)- cv::Vec2d(16,16),
-                    coord.at<cv::Vec2d>(i, j) + cv::Vec2d(rand() % 64,rand() % 64)- cv::Vec2d(32,32)
+                    coord.at<cv::Vec2d>(i, j) + cv::Vec2d(rand() % 64,rand() % 64)- cv::Vec2d(32,32),
+                    coord.at<cv::Vec2d>(i, j) + cv::Vec2d(rand() % 128,rand() % 128)- cv::Vec2d(64,64)
             };
-            cv::Mat p = dst_im.rowRange(i,i+PATCH_SIZE).colRange(j,j+PATCH_SIZE);
+            p = dst_im.rowRange(i,i+PATCH_SIZE).colRange(j,j+PATCH_SIZE);
 
-            for(auto pos: new_poses) {
+            for(auto & pos: new_poses) {
                 //这里需要判断一下位置是不是合理
                 if(pos[0]<0 || pos[0] > src_im.rows - PATCH_SIZE || pos[1]<0 || pos[1] > src_im.cols - PATCH_SIZE) continue;
 
-                cv::Mat q = src_im.rowRange(pos[0],pos[0]+PATCH_SIZE).colRange(pos[1],pos[1]+PATCH_SIZE);
-                double new_d = patchDistance(p,q);
+                q = src_im.rowRange(pos[0],pos[0]+PATCH_SIZE).colRange(pos[1],pos[1]+PATCH_SIZE);
+                new_d = patchDistance(p,q);
                 if (diff.at<double>(i, j) > new_d){
                     diff.at<double>(i, j) = new_d;
                     coord.at<cv::Vec2d>(i,j) = pos;
@@ -120,7 +131,7 @@ void PatchMatch::generatePatched() {
     }
 }
 
-double PatchMatch::patchDistance(cv::Mat q, cv::Mat p) {
+double PatchMatch::patchDistance(const cv::Mat &q, const cv::Mat &p) {
     cv::Mat diff;
     cv::absdiff(q,p,diff);
     cv::multiply(diff,diff,diff);
@@ -132,6 +143,10 @@ double PatchMatch::patchDistance(cv::Mat q, cv::Mat p) {
     }
 
     return dist;
+}
+
+cv::Mat PatchMatch::getCoord() {
+    return coord;
 }
 
 cv::Mat PatchMatch::getPatched() {

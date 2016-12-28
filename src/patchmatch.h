@@ -22,7 +22,7 @@
 namespace lv{
     class PatchMatch{
     public:
-        const static int MAX_ITR = 50;
+        const static int MAX_ITR = 10;
         const static int PATCH_SIZE = 3;
         const static int STRIDE = 1;
 
@@ -35,8 +35,10 @@ namespace lv{
         void patchmatch();
         void neighborPropgation();//临近传播
         void randomPropgation();//随即传播
-        double patchDistance(cv::Mat,cv::Mat);
+        double patchDistance(const cv::Mat &, const cv::Mat &);
         void generatePatched();
+        cv::Mat getCoord(); //获取成成的坐标
+        cv::Mat getPatched();
 
     private:
         cv::Mat src_im; //原始图像
@@ -49,8 +51,6 @@ namespace lv{
         int cols;
 
         bool unchanged;
-
-        cv::Mat getPatched();
     };
 };
 
