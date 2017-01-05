@@ -28,7 +28,8 @@ namespace lv{
 
     public:
         PatchMatch();
-        PatchMatch(cv::Mat, cv::Mat);
+        PatchMatch(cv::Mat, cv::Mat, double scale = 1.0);
+        PatchMatch(cv::Mat, cv::Mat,cv::Mat, cv::Mat, double scale = 1.0);
 
         void init();//随机初始化位置；
 
@@ -39,6 +40,7 @@ namespace lv{
         void generatePatched();
         cv::Mat getCoord(); //获取成成的坐标
         cv::Mat getPatched();
+        cv::Mat getCoordDist(); //获取响铃坐标的差异性；
 
     private:
         cv::Mat src_im; //原始图像
@@ -47,8 +49,12 @@ namespace lv{
         cv::Mat patched_im;
         cv::Mat diff;
 
+        cv::Mat dst;
+        cv::Mat src;
+
         int rows;
         int cols;
+        double scale;
 
         bool unchanged;
     };

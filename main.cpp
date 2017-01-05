@@ -15,6 +15,12 @@ int main() {
     cv::waitKey(0);
     cv::destroyAllWindows();
     */
+
+    /**
+     * TODO :
+     * 1. 实现patchmatch地下采样版本
+     * 2. 分离特征patch和合成patch；
+     */
     PatchMatch pm(a,b);
     pm.init();
     pm.patchmatch();
