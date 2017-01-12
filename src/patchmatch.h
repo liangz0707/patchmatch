@@ -22,8 +22,8 @@
 namespace lv{
     class PatchMatch{
     public:
-        const static int MAX_ITR = 10;
-        const static int PATCH_SIZE = 3;
+        const static int MAX_ITR = 5;
+        const static int PATCH_SIZE = 7;
         const static int STRIDE = 1;
 
     public:
@@ -31,9 +31,10 @@ namespace lv{
         PatchMatch(cv::Mat, cv::Mat, double scale = 1.0);
         PatchMatch(cv::Mat, cv::Mat,cv::Mat, cv::Mat, double scale = 1.0);
 
-        void init();//随机初始化位置；
+        virtual void init();//随机初始化位置；
+        void init(cv::Mat ic);//使用外部矩阵初始化;
 
-        void patchmatch();
+        virtual void patchmatch();
         void neighborPropgation();//临近传播
         void randomPropgation();//随即传播
         double patchDistance(const cv::Mat &, const cv::Mat &);
@@ -41,8 +42,9 @@ namespace lv{
         cv::Mat getCoord(); //获取成成的坐标
         cv::Mat getPatched();
         cv::Mat getCoordDist(); //获取响铃坐标的差异性；
+        cv::Mat getDiff();//显示距离的热力图；
 
-    private:
+    protected:
         cv::Mat src_im; //原始图像
         cv::Mat coord;
         cv::Mat dst_im; //目标图像

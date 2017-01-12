@@ -4,9 +4,7 @@
 #include "patchmatch.h"
 
 using namespace lv;
-PatchMatch::PatchMatch(){
-
-}
+PatchMatch::PatchMatch(){}
 
 PatchMatch::PatchMatch(cv::Mat src, cv::Mat dst, double scale):src(src),dst(dst),src_im(src),dst_im(dst),scale(scale){}
 PatchMatch::PatchMatch(cv::Mat src, cv::Mat dst,cv::Mat src_im, cv::Mat dst_im, double scale):src(src),dst(dst),src_im(src_im),dst_im(dst_im),scale(scale){}
@@ -34,8 +32,28 @@ void PatchMatch::init() {
     unchanged = false;
 }
 
+void PatchMatch::init(cv::Mat ic) {
+    cols = dst_im.cols;
+    rows = dst_im.rows;
+    diff = cv::Mat(rows,cols,CV_64FC1);
+    coord = cv::Mat(rows,cols,CV_64FC2);
+    patched_im = cv::Mat::zeros(rows,cols,CV_8UC3);
+    srand( (unsigned)time( NULL ) );
+
+    for(int i = 0; i < rows - PATCH_SIZE; i+=STRIDE) {
+        for (int j = 0; j < cols - PATCH_SIZE; j+=STRIDE) {
+            coord.at<cv::Vec2d>(i, j) = ic.at<cv::Vec2d>(i, j);
+            cv::Vec2d pos = coord.at<cv::Vec2d>(i, j);
+            cv::Mat p = dst_im.rowRange(i,i+PATCH_SIZE).colRange(j,j+PATCH_SIZE);
+            cv::Mat q = src_im.rowRange(pos[0],pos[0]+PATCH_SIZE).colRange(pos[1],pos[1]+PATCH_SIZE);
+
+            diff.at<double>(i, j) = patchDistance(p,q);
+        }
+    }
+    unchanged = false;
+}
+
 void PatchMatch::patchmatch() {
-    //cv::namedWindow("result");
     int itr = 0;
     while( itr ++ < MAX_ITR){
         unchanged = true;
@@ -44,8 +62,8 @@ void PatchMatch::patchmatch() {
         randomPropgation();
         time_t b = clock();
     }
-    //cv::destroyAllWindows();
 }
+
 void PatchMatch::neighborPropgation() {
     cv::Mat p;
     cv::Mat q;
@@ -57,7 +75,7 @@ void PatchMatch::neighborPropgation() {
         for (int j = 0; j < cols - PATCH_SIZE; j += STRIDE) {
 
             new_poses[0]=coord.at<cv::Vec2d>(i + STRIDE, j) - cv::Vec2d(STRIDE,0);
-            new_poses[1]=coord.at<cv::Vec2d>(i - STRIDE, j) + cv::Vec2d(STRIDE,0);
+            new_poses[1]=coord.at<cv::Vec2d>(std::max(0,i - STRIDE), j) + cv::Vec2d(STRIDE,0);
             new_poses[2]=coord.at<cv::Vec2d>(i, j + STRIDE) - cv::Vec2d(0,STRIDE);
             new_poses[3]=coord.at<cv::Vec2d>(i, j - STRIDE) + cv::Vec2d(0,STRIDE);
 
@@ -185,4 +203,10 @@ cv::Mat PatchMatch::getCoordDist() {
     cv::magnitude( s[0], s[1],lap);
     cv::normalize(lap,lap,0,1,cv::NORM_MINMAX);
     return lap;
+}
+
+cv::Mat PatchMatch::getDiff() {
+    cv::Mat diffVal;
+    cv::normalize(diff,diffVal,0,1,cv::NORM_MINMAX);
+    return diffVal;
 }
